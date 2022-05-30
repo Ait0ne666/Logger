@@ -1,20 +1,20 @@
 
-use std::rc::Rc;
+use std::{rc::Rc, sync::Arc};
 
 use crate::{
     
-    setup_grpc::{logger_grpc_service_server::LoggerGrpcService, LoggerRequest, LoggerResponse}, prelude::{Logging, Logger, Severity},
+    setup_grpc::{logger_grpc_service_server::LoggerGrpcService, LoggerRequest, LoggerResponse}, prelude::{ Logger, Severity},
 };
 use tonic::{Request, Response, Status};
 
-#[derive(Debug)]
+
 pub struct GRPCService {
-    logger: &'static Logger
+    logger: Arc<Logger>
 }
 
 
 impl GRPCService {
-    pub fn new(logger: &'static Logger) -> Self {
+    pub fn new(logger: Arc<Logger>) -> Self {
         GRPCService { logger: logger }
     }
 }
@@ -30,7 +30,7 @@ impl LoggerGrpcService for GRPCService {
        
         let data = request.get_ref();
 
-        self.logger.log(&data.message, Severity::from(data.severity.clone()), data.app.clone().unwrap());
+        self.logger.log(&data.message, Severity::from(data.severity.clone()), data.app.clone().unwrap()).await;
 
 
         let reply = LoggerResponse {

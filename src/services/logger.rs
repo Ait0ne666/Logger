@@ -1,13 +1,10 @@
 use chrono::prelude::*;
+use std::sync::Arc;
 use std::{time::SystemTime, fmt::Debug};
 
 use crate::{setup_grpc::App};
 use crate::prelude::*;
 
-
-pub trait Logging {
-    fn log(&'static self, message: &str, severity: Severity, app: App); 
-}
 
 
 
@@ -81,23 +78,29 @@ impl Into<&str> for Severity {
 }
 
 
-#[derive(Debug, Default, Clone)]
-pub struct Logger {}
-
-
-
-
-impl Logging for Logger {
-     fn log(&self, message: &str, severity: Severity, app: App) {
-        let time = Utc::now();
-        let timestamp = time.format("%d-%m-%Y %H:%M:%S").to_string();
-
-        let s: &str = severity.into();
-
-        let formatted_message = format!("[{}]-{}\nApp: {}]\nMessage: {}", timestamp, s, app.title, message); 
-
-
-        send_message_to_telegram(&formatted_message, app.telegram_chat_id);
-    }
+#[derive( Clone)]
+pub struct Logger {
+    pub file_logger: Arc<FileLogger>
 }
+
+impl Logger {
+    pub async fn log(&self, message: &str, severity: Severity, app: App) {
+       let time = Utc::now();
+       let timestamp = time.format("%d-%m-%Y %H:%M:%S").to_string();
+    
+       let s: &str = severity.into();
+    
+       let formatted_message = format!("[{}]-{}\nApp: {}\nMessage: {}", timestamp, s, app.title, message); 
+    
+    
+       send_message_to_telegram(&formatted_message, app.telegram_chat_id).await;
+    
+    
+       println!("sent");
+    }
+
+}
+
+
+
 
